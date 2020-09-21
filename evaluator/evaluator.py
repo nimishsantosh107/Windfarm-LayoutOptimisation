@@ -392,9 +392,8 @@ def getAEP(turb_rad, turb_coords, power_curve, wind_inst_freq,
     AEP = AEP/1e3
     
     return(AEP)
-    
 
-    
+
 def checkConstraints(turb_coords, turb_diam):
     """
     -**-THIS FUNCTION SHOULD NOT BE MODIFIED-**-
@@ -443,14 +442,63 @@ def checkConstraints(turb_coords, turb_diam):
     
     # print messages
     if  peri_constr_viol  == True  and prox_constr_viol == True:
-          print('[ERR] perimeter and proximity constraints - VIOLATED\n')
+          print('[ERR] perimeter and proximity constraints - VIOLATED')
     elif peri_constr_viol == True  and prox_constr_viol == False:
-          print('[ERR] perimeter constraint - VIOLATED\n')
+          print('[ERR] perimeter constraint - VIOLATED')
     elif peri_constr_viol == False and prox_constr_viol == True:
-          print('[ERR] proximity constraint - VIOLATED\n')
-    else: print('[SUCCESS] perimeter and proximity constraints - SATISFIED\n')
+          print('[ERR] proximity constraint - VIOLATED')
+    else: 
+          print('[SUCCESS] perimeter and proximity constraints - SATISFIED')
         
     return()
+
+############### CUSTOM #################
+
+def checkConstraints_F(turb_coords, turb_diam):
+    """
+    -**-THIS FUNCTION SHOULD NOT BE MODIFIED-**-
+    
+    Checks if the turbine configuration satisfies the two
+    constraints:(i) perimeter constraint,(ii) proximity constraint 
+    Prints which constraints are violated if any. Note that this 
+    function does not quantifies the amount by which the constraints 
+    are violated if any. 
+    
+    :called from
+        main 
+        
+    :param
+        turb_coords - 2d np array containing turbine x,y coordinates
+        turb_diam   - Diameter of the turbine (m)
+    
+    :return
+        None. Prints messages.   
+    """
+    bound_clrnc      = 50
+
+    # create a shapely polygon object of the wind farm
+    farm_peri = [(0, 0), (0, 4000), (4000, 4000), (4000, 0)]
+    farm_poly = Polygon(farm_peri)
+    
+    # checks if for every turbine perimeter constraint is satisfied. 
+    # breaks out if False anywhere
+    for turb in turb_coords:
+        turb = Point(turb)
+        inside_farm   = farm_poly.contains(turb)
+        correct_clrnc = farm_poly.boundary.distance(turb) >= bound_clrnc
+        if (inside_farm == False or correct_clrnc == False):
+            return -1
+    
+    # checks if for every turbines proximity constraint is satisfied. 
+    # breaks out if False anywhere
+    for i,turb1 in enumerate(turb_coords):
+        for turb2 in np.delete(turb_coords, i, axis=0):
+            if  np.linalg.norm(turb1 - turb2) < 4*turb_diam:
+                return -1
+        
+    return 1
+
+############### CUSTOM #################
 
 if __name__ == "__main__":
 
